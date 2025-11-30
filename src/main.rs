@@ -1,16 +1,24 @@
+mod prelude {
+    pub use crate::{
+        disharmonizer_stack::disharmonizer_stack,
+        gold_factory::gold_factory,
+        pure_factory::pure_factory,
+        spark_factory::spark_factory,
+        storage::{all_items, storage_vault},
+        util::stack,
+    };
+
+    pub use immortality_factory_laboratory::prelude::*;
+}
+
 mod disharmonizer_stack;
 mod gold_factory;
 mod pure_factory;
 mod spark_factory;
 mod storage;
+mod util;
 
-use crate::{pure_factory::pure_factory, spark_factory::spark_factory, storage::*};
-use std::{
-    fs::File,
-    io::{BufWriter, Write},
-};
-
-use immortality_factory_laboratory::prelude::*;
+use crate::{prelude::*, util::export};
 
 fn pure_stuff() -> World {
     let mut world = World::new();
@@ -54,10 +62,5 @@ fn main() {
     world.place(&all_items(16), -100, -100);
     world.place(&stuff(), 0, 0);
 
-    let file = File::create("../save.ini").expect("Failed to create file.");
-    let mut writer = BufWriter::new(file);
-    world
-        .export(&mut writer)
-        .and_then(|()| writer.flush()) // docs told me to flush it manually instead of relying on Drop
-        .expect("Failed to write to file.");
+    export(&world, "../save.ini");
 }

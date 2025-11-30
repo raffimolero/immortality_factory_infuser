@@ -1,10 +1,4 @@
-use std::array::from_fn;
-
-use immortality_factory_laboratory::prelude::*;
-
-fn stack<T, const N: usize>(mut f: impl FnMut(i32) -> T) -> [T; N] {
-    from_fn(|i| f(i as i32))
-}
+use crate::prelude::*;
 
 /// inputs: [gold, blood]
 ///

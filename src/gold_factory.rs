@@ -1,19 +1,15 @@
-use crate::disharmonizer_stack::disharmonizer_stack;
-use std::array;
-
-use immortality_factory_laboratory::prelude::*;
+use crate::prelude::*;
 
 /// inputs: [gold]
 ///
 /// outputs: [3.72x gold]/2s
-fn gold_factory() -> Blueprint {
+pub fn gold_factory() -> Blueprint {
     let gold_factory = {
         let mut bp = World::new();
         let dhs = bp.place(&disharmonizer_stack(), 0, 0);
 
         // a lot of things
-        let glooms: [PortOut; 4] = array::from_fn(|i| {
-            let i = i as i32;
+        let glooms = stack::<_, 4>(|i| {
             let merge_x = (i % 2) * (Merger.width() * 3) + 40;
             let merge_y = (i / 2) * Merger.height() + 5;
             let merge0 = bp.place(Merger, merge_x, merge_y);
@@ -46,8 +42,8 @@ fn gold_factory() -> Blueprint {
             dh_gloom.output(0)
         });
 
-        let merges_coin: [Structure; 6] = array::from_fn(|i| {
-            let merge_x = 56 + i as i32;
+        let merges_coin = stack::<_, 6>(|i| {
+            let merge_x = 56 + i;
             let merge_y = 5;
             bp.place(BigMerger, merge_x, merge_y)
         });
@@ -56,8 +52,7 @@ fn gold_factory() -> Blueprint {
         }
 
         // sell dust
-        let sells: [Structure; 16] = array::from_fn(|i| {
-            let i = i as i32;
+        let sells = stack::<_, 16>(|i| {
             let sell_x = (i / 2) * SubdimensionalMarket.width();
             let sell_y = (i % 2) * SubdimensionalMarket.height() + dhs.height();
             let sell = bp.place(SubdimensionalMarket, sell_x, sell_y);
