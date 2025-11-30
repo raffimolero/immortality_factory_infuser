@@ -1,9 +1,14 @@
-use std::array;
-
-use crate::disharmonizer_stack::disharmonizer_stack;
+use std::array::from_fn;
 
 use immortality_factory_laboratory::prelude::*;
 
+fn stack<T, const N: usize>(mut f: impl FnMut(i32) -> T) -> [T; N] {
+    from_fn(|i| f(i as i32))
+}
+
+/// inputs: [gold, blood]
+///
+/// outputs: [gold, blood, pure, pure]
 pub fn pure_factory() -> Blueprint {
     let mut bp = World::new();
     let mut inputs = vec![];
@@ -18,11 +23,15 @@ pub fn pure_factory() -> Blueprint {
     let mana_w = refines_w + ROWS;
     let dhs_mana_w = mana_w + Disharmonizer.width() * 2;
     let dhs_curse_w = dhs_mana_w + Disharmonizer.width();
+    let ufs_w = dhs_curse_w + Unifier.width() * 5;
+    let ufs_gem_h = Unifier.height() * 2;
+    let ufs_blood_h = ufs_gem_h + Unifier.height();
+    let merges_curse_h = ufs_blood_h - Merger.height();
+    let factory_w = ufs_w + Refinery.width();
+    let factory_h = refines_h;
 
     // mana gems and disharms
-    // (out curse, out gem)
-    let dhs_mana = array::from_fn::<_, { ROWS as usize * 2 }, _>(|i| {
-        let i = i as i32;
+    let out_curse_gem = stack::<_, { ROWS as usize * 2 }>(|i| {
         let merge_y = if i < ROWS {
             0
         } else {
@@ -57,28 +66,66 @@ pub fn pure_factory() -> Blueprint {
         (dh_mana.output(2), uf_gem.output(0))
     });
 
-    // (out salt, in copper, out blood)
-    let dhs_curse = array::from_fn::<_, { ROWS as usize }, _>(|i| {
-        let i = i as i32;
-        let merge = bp.place(Merger, refines_w + i, BigMerger.height());
+    const MERGES: usize = 4;
+    let [bm_gold, bm_blood, bms @ ..] = stack::<_, MERGES>(|i| {
+        let merge = bp.place(BigMerger, refines_w + i, BigMerger.height());
+        merge
+    });
+    let merge_gold = bp.place(BigMerger, refines_w + MERGES as i32, BigMerger.height());
+    let merge_blood = bp.place(
+        BigMerger,
+        refines_w + MERGES as i32,
+        BigMerger.height() + Merger.height(),
+    );
+    bp.connect(bm_gold.output(0), merge_gold.input(1));
+    bp.connect(bm_blood.output(0), merge_blood.input(1));
+    inputs.push(merge_gold.input(0));
+    inputs.push(merge_blood.input(0));
+    outputs.push(merge_gold.output(0));
+    outputs.push(merge_blood.output(0));
+
+    let _ = stack::<_, { ROWS as usize }>(|i| {
+        let merge = bp.place(Merger, ufs_w + (i % ROWS), merges_curse_h);
         let dh_curse = bp.place(Disharmonizer, dhs_mana_w, i * Disharmonizer.height());
-        bp.connect(dhs_mana[i as usize * 2].0, merge.input(0));
-        bp.connect(dhs_mana[i as usize * 2 + 1].0, merge.input(1));
+        bp.connect(out_curse_gem[i as usize * 2].0, merge.input(0));
+        bp.connect(out_curse_gem[i as usize * 2 + 1].0, merge.input(1));
         bp.connect(merge.output(0), dh_curse.input(0));
 
-        let uf_blood = bp.place(
-            Unifier,
-            dhs_curse_w + i * Unifier.width(),
-            Unifier.height() * 2,
-        );
+        let uf_blood = bp.place(Unifier, dhs_curse_w + i * Unifier.width(), ufs_gem_h);
         bp.connect(dh_curse.output(1), uf_blood.input(0));
         bp.connect(dh_curse.output(2), uf_blood.input(1));
-        (dh_curse.output(0), uf_blood.input(2), uf_blood.output(0))
+        bp.connect(uf_blood.output(0), bm_blood.input(i as usize));
+
+        let sell = bp.place(
+            SubdimensionalMarket,
+            dhs_curse_w + i * SubdimensionalMarket.width(),
+            ufs_blood_h,
+        );
+        bp.connect(dh_curse.output(0), sell.input(0));
+        bp.connect(sell.output(2), uf_blood.input(2));
+        bp.connect(sell.output(0), bm_gold.input(i as usize));
+    });
+
+    let _ = stack::<_, 2>(|i| {
+        let refine = bp.place(Refinery, ufs_w, merges_curse_h - refine_h * (1 + i));
+
+        let merge = bms[i as usize];
+        for j in 0..ROWS {
+            bp.connect(
+                out_curse_gem[(i * ROWS + j) as usize].1,
+                merge.input(j as usize),
+            );
+        }
+        bp.connect(merge.output(0), refine.input(0));
+        outputs.push(refine.output(0));
     });
 
     Blueprint {
         contents: bp,
-        size: Size { w: -1, h: -1 }, // TODO
+        size: Size {
+            w: factory_w,
+            h: factory_h,
+        },
         inputs,
         outputs,
     }
