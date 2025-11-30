@@ -65,9 +65,13 @@ pub fn pure_factory() -> Blueprint {
         let merge = bp.place(BigMerger, refines_w + i, BigMerger.height());
         merge
     });
-    let merge_gold = bp.place(BigMerger, refines_w + MERGES as i32, BigMerger.height());
+    let merge_gold = bp.place(
+        Merger,
+        refines_w + MERGES as i32,
+        BigMerger.height(), //
+    );
     let merge_blood = bp.place(
-        BigMerger,
+        Merger,
         refines_w + MERGES as i32,
         BigMerger.height() + Merger.height(),
     );

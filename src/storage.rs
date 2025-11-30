@@ -1,5 +1,35 @@
 use immortality_factory_laboratory::prelude::*;
 
+pub fn overflow(columns: usize) -> Blueprint {
+    let columns = columns as i32;
+    let mut bp = World::new();
+    let mut input = None;
+    let mut output = None;
+    let col_w = 1 + AbysalDoor.width();
+    for i in 0..columns {
+        let x = col_w * i;
+        let bs = bp.place(BigSplitter, x, 0);
+        for j in 0..4 {
+            let ad = bp.place(AbysalDoor, x + 1, j);
+            bp.connect(bs.output(j as usize), ad.input(0));
+        }
+        match output.take() {
+            Some(prev) => bp.connect(prev, bs.input(0)),
+            None => input = Some(bs.input(0)),
+        }
+        output = Some(bs.output(4));
+    }
+    Blueprint {
+        contents: bp,
+        size: Size {
+            w: col_w * columns,
+            h: BigSplitter.height(),
+        },
+        inputs: Vec::from_iter(input),
+        outputs: Vec::from_iter(output),
+    }
+}
+
 pub fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
     let mut bp = World::new();
     let mut input = None;
@@ -14,10 +44,9 @@ pub fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
             (i / rows) as i32 * StorageVault.width(),
             (i % rows) as i32 * StorageVault.height(),
         );
-        if let Some(prev) = output.take() {
-            bp.connect(prev, cur.input(0));
-        } else {
-            input = Some(cur.input(0));
+        match output.take() {
+            Some(prev) => bp.connect(prev, cur.input(0)),
+            None => input = Some(cur.input(0)),
         }
         output = Some(cur.output(0));
     }
