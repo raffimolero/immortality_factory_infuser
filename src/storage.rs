@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub fn overflow(columns: usize) -> Blueprint {
+pub fn trash(columns: usize) -> Blueprint {
     let mut bp = World::new();
     let col_w = 1 + AbysalDoor.width();
     let sps = stack_vec(columns, |i| {
@@ -24,7 +24,7 @@ pub fn overflow(columns: usize) -> Blueprint {
     }
 }
 
-pub fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
+pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
     let rows = rows as i32;
     let mut bp = World::new();
     let svs = stack_vec(count, |i| {
@@ -57,11 +57,7 @@ pub fn all_items(rows: usize) -> Blueprint {
     let mut outputs = vec![];
     for (i, item) in Item::ITEMS.iter().copied().enumerate() {
         let i = i as i32;
-        let sv = bp.place(
-            &storage_vault(rows, rows, item),
-            i * StorageVault.width(),
-            0,
-        );
+        let sv = bp.place(&storage(rows, rows, item), i * StorageVault.width(), 0);
         inputs.push(sv.input(0));
         outputs.push(sv.output(0));
     }
