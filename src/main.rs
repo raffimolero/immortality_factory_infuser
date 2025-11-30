@@ -94,7 +94,16 @@ fn spark_stuff_2() -> World {
     world
 }
 
+fn gold_stuff() -> World {
+    let mut world = World::new();
+    let sf = world.place(&gold_factory(), 0, 0);
+    let sv = world.place(&storage_vault(8 * 4, 4, Empty), 0, sf.height());
+    world.connect(sf.output(0), sv.input(0));
+    world
+}
+
 fn stuff() -> World {
+    // gold_stuff()
     // spark_stuff()
     // pure_stuff()
     spark_stuff_2()
