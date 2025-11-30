@@ -1,60 +1,53 @@
 use crate::prelude::*;
 
 pub fn overflow(columns: usize) -> Blueprint {
-    let columns = columns as i32;
     let mut bp = World::new();
     let col_w = 1 + AbysalDoor.width();
-    let sps = (0..columns)
-        .map(|i| {
-            let x = col_w * i;
-            let bs = bp.place(BigSplitter, x, 0);
-            for j in 0..4 {
-                let ad = bp.place(AbysalDoor, x + 1, j);
-                bp.connect(bs.output(j as usize), ad.input(0));
-            }
-            bs
-        })
-        .collect::<Vec<_>>();
-    let (inputs, outputs) = chain_ports(&mut bp, sps, [(0, 4)]);
+    let sps = stack_vec(columns, |i| {
+        let x = col_w * i;
+        let bs = bp.place(BigSplitter, x, 0);
+        for j in 0..4 {
+            let ad = bp.place(AbysalDoor, x + 1, j);
+            bp.connect(bs.output(j as usize), ad.input(0));
+        }
+        bs
+    });
+    let (inputs, outputs) = split_inputs_outputs(chain_ports(&mut bp, &sps, [(0, 4)]));
     Blueprint {
         contents: bp,
         size: Size {
-            w: col_w * columns,
+            w: col_w * columns as i32,
             h: BigSplitter.height(),
         },
-        inputs: inputs.into_iter().flatten().collect(),
-        outputs: outputs.into_iter().flatten().collect(),
+        inputs,
+        outputs,
     }
 }
 
 pub fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
+    let rows = rows as i32;
     let mut bp = World::new();
-    let mut input = None;
-    let mut output = None;
-    for i in 0..count {
-        let cur = bp.place(
+    let svs = stack_vec(count, |i| {
+        let sv = bp.place(
             StructureData::StorageVault {
                 input: item,
                 storage: [item; 16],
                 output: item,
             },
-            (i / rows) as i32 * StorageVault.width(),
-            (i % rows) as i32 * StorageVault.height(),
+            (i / rows) * StorageVault.width(),
+            (i % rows) * StorageVault.height(),
         );
-        match output.take() {
-            None => input = Some(cur.input(0)),
-            Some(prev) => bp.connect(prev, cur.input(0)),
-        }
-        output = Some(cur.output(0));
-    }
+        sv
+    });
+    let (inputs, outputs) = split_inputs_outputs(chain_ports(&mut bp, &svs, [(0, 0)]));
     Blueprint {
         contents: bp,
         size: Size {
             w: StorageVault.width(),
             h: StorageVault.height() * count as i32,
         },
-        inputs: Vec::from_iter(input),
-        outputs: Vec::from_iter(output),
+        inputs,
+        outputs,
     }
 }
 

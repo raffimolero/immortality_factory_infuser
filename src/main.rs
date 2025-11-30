@@ -5,7 +5,7 @@ mod prelude {
         pure_factory::pure_factory,
         spark_factory::spark_factory,
         storage::{all_items, overflow, storage_vault},
-        util::{chain_ports, stack},
+        util::{chain_ports, split_inputs_outputs, stack, stack_vec},
     };
 
     pub use immortality_factory_laboratory::prelude::*;
@@ -23,14 +23,24 @@ use crate::{prelude::*, util::export};
 fn pure_stuff() -> World {
     let mut world = World::new();
     let pf_bp = &pure_factory();
-    let pure_factory = world.place(pf_bp, 0, 0);
-    let pure_factory = world.place(pf_bp, 0, pf_bp.height());
+    let stack_count = 3;
 
     let ov_bp = &overflow(3);
-    let _ = stack::<_, 4>(|i| {
+    let ovs = stack_vec(stack_count * 2 + 2, |i| {
         let ov = world.place(ov_bp, -ov_bp.width(), ov_bp.height() * i);
-        world.connect(pure_factory.output(i as usize), ov.input(0));
+        ov.input(0)
     });
+
+    let pure_factories = stack_vec(stack_count, |i| {
+        let pf = world.place(pf_bp, 0, i * pf_bp.height());
+        world.connect(pf.output(2), ovs[i as usize * 2]);
+        world.connect(pf.output(3), ovs[i as usize * 2 + 1]);
+        pf
+    });
+    let (inputs, outputs) = chain_ports(&mut world, &pure_factories, [(0, 0), (1, 1)]).unwrap();
+    for (i, o) in outputs.into_iter().enumerate() {
+        world.connect(o, ovs[i + stack_count * 2]);
+    }
 
     world
 }

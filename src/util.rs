@@ -11,17 +11,21 @@ pub fn stack<T, const N: usize>(mut f: impl FnMut(i32) -> T) -> [T; N] {
     array::from_fn(|i| f(i as i32))
 }
 
+pub fn stack_vec<T>(n: usize, f: impl FnMut(i32) -> T) -> Vec<T> {
+    Vec::from_iter((0..n as i32).map(f))
+}
+
 /// port_mappings follows the form [(input_index, output_index); N]
 ///
 /// output is a tuple of options for convenience
-pub fn chain_ports<I, V, const N: usize>(
+pub fn chain_ports<'a, I, V, const N: usize>(
     world: &mut World,
     machines: I,
     port_mappings: [(usize, usize); N],
-) -> (Option<[PortIn; N]>, Option<[PortOut; N]>)
+) -> Option<([PortIn; N], [PortOut; N])>
 where
-    I: IntoIterator<Item = V>,
-    V: Machine,
+    I: IntoIterator<Item = &'a V>,
+    V: Machine + 'a,
 {
     let input_indices = port_mappings.map(|(input, _output)| input);
     let output_indices = port_mappings.map(|(_input, output)| output);
@@ -40,9 +44,23 @@ where
         let outputs = output_indices.map(|i| m.output(i));
         cur = Some((inputs, outputs));
     }
+    cur
+}
+
+pub fn split_inputs_outputs<const N: usize>(
+    ports: Option<([PortIn; N], [PortOut; N])>,
+) -> (Vec<PortIn>, Vec<PortOut>) {
     (
-        cur.map(|(inputs, _outputs)| inputs),
-        cur.map(|(_inputs, outputs)| outputs),
+        ports
+            .into_iter()
+            .map(|(inputs, _outputs)| inputs)
+            .flatten()
+            .collect(),
+        ports
+            .into_iter()
+            .map(|(_inputs, outputs)| outputs)
+            .flatten()
+            .collect(),
     )
 }
 
