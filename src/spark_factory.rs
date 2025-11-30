@@ -1,6 +1,6 @@
+use crate::disharmonizer_stack::disharmonizer_stack;
 use std::array;
 
-use crate::disharmonizer_stack::disharmonizer_stack;
 use immortality_factory_laboratory::prelude::*;
 
 /// inputs: [gold, pure]

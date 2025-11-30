@@ -1,9 +1,10 @@
 mod disharmonizer_stack;
 mod gold_factory;
+mod pure_factory;
 mod spark_factory;
 mod storage;
 
-use crate::{spark_factory::spark_factory, storage::*};
+use crate::{pure_factory::pure_factory, spark_factory::spark_factory, storage::*};
 use std::{
     fs::File,
     io::{BufWriter, Write},
@@ -11,7 +12,13 @@ use std::{
 
 use immortality_factory_laboratory::prelude::*;
 
-fn stuff() -> World {
+fn pure_stuff() -> World {
+    let mut world = World::new();
+    let pure_factory = world.place(&pure_factory(), 0, 0);
+    world
+}
+
+fn spark_stuff() -> World {
     let mut world = World::new();
     let pure_vault_count = 16;
     let pure_vault = world.place(
@@ -34,6 +41,11 @@ fn stuff() -> World {
         world.connect(sf.output(1), sv_spark.input(0));
     }
     world
+}
+
+fn stuff() -> World {
+    // spark_stuff()
+    pure_stuff()
 }
 
 fn main() {
