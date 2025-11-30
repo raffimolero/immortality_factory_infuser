@@ -5,7 +5,7 @@ mod prelude {
         pure_factory::pure_factory,
         spark_factory::spark_factory,
         storage::{all_items, overflow, storage_vault},
-        util::stack,
+        util::{chain_ports, stack},
     };
 
     pub use immortality_factory_laboratory::prelude::*;
@@ -22,11 +22,13 @@ use crate::{prelude::*, util::export};
 
 fn pure_stuff() -> World {
     let mut world = World::new();
-    let pure_factory = world.place(&pure_factory(), 0, 0);
+    let pf_bp = &pure_factory();
+    let pure_factory = world.place(pf_bp, 0, 0);
+    let pure_factory = world.place(pf_bp, 0, pf_bp.height());
 
-    let ov_bp = overflow(1);
+    let ov_bp = &overflow(3);
     let _ = stack::<_, 4>(|i| {
-        let ov = world.place(&ov_bp, -ov_bp.width(), ov_bp.height() * i);
+        let ov = world.place(ov_bp, -ov_bp.width(), ov_bp.height() * i);
         world.connect(pure_factory.output(i as usize), ov.input(0));
     });
 

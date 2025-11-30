@@ -1,32 +1,29 @@
-use immortality_factory_laboratory::prelude::*;
+use crate::prelude::*;
 
 pub fn overflow(columns: usize) -> Blueprint {
     let columns = columns as i32;
     let mut bp = World::new();
-    let mut input = None;
-    let mut output = None;
     let col_w = 1 + AbysalDoor.width();
-    for i in 0..columns {
-        let x = col_w * i;
-        let bs = bp.place(BigSplitter, x, 0);
-        for j in 0..4 {
-            let ad = bp.place(AbysalDoor, x + 1, j);
-            bp.connect(bs.output(j as usize), ad.input(0));
-        }
-        match output.take() {
-            Some(prev) => bp.connect(prev, bs.input(0)),
-            None => input = Some(bs.input(0)),
-        }
-        output = Some(bs.output(4));
-    }
+    let sps = (0..columns)
+        .map(|i| {
+            let x = col_w * i;
+            let bs = bp.place(BigSplitter, x, 0);
+            for j in 0..4 {
+                let ad = bp.place(AbysalDoor, x + 1, j);
+                bp.connect(bs.output(j as usize), ad.input(0));
+            }
+            bs
+        })
+        .collect::<Vec<_>>();
+    let (inputs, outputs) = chain_ports(&mut bp, sps, [(0, 4)]);
     Blueprint {
         contents: bp,
         size: Size {
             w: col_w * columns,
             h: BigSplitter.height(),
         },
-        inputs: Vec::from_iter(input),
-        outputs: Vec::from_iter(output),
+        inputs: inputs.into_iter().flatten().collect(),
+        outputs: outputs.into_iter().flatten().collect(),
     }
 }
 
@@ -45,8 +42,8 @@ pub fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
             (i % rows) as i32 * StorageVault.height(),
         );
         match output.take() {
-            Some(prev) => bp.connect(prev, cur.input(0)),
             None => input = Some(cur.input(0)),
+            Some(prev) => bp.connect(prev, cur.input(0)),
         }
         output = Some(cur.output(0));
     }
