@@ -107,5 +107,5 @@ fn main() {
     world.place(&all_items(16), -100, -100);
     world.place(&stuff(), 0, 0);
 
-    export(&world, "../save.ini");
+    export(&world, "../save.ini").expect("Could not export world.");
 }
