@@ -3,7 +3,7 @@ use std::array;
 
 use immortality_factory_laboratory::prelude::*;
 
-/// inputs: [gold, pure]
+/// inputs: [gold, pure, pure]
 ///
 /// outputs: [gold, spark]
 pub fn spark_factory() -> Blueprint {
@@ -54,7 +54,7 @@ pub fn spark_factory() -> Blueprint {
     for w in merges_coin[0..3].windows(2) {
         bp.connect(w[0].output(0), w[1].input(0));
     }
-    let split_pure = bp.place(Splitter, 61, 5);
+    // let split_pure = bp.place(Splitter, 61, 5);
     let merge_spark = bp.place(Merger, 61, 8);
 
     // sell dust
@@ -87,6 +87,8 @@ pub fn spark_factory() -> Blueprint {
     for i in 0..4 {
         bp.connect(sells[i].output(2), dhs.input(i));
     }
+
+    let mut inputs = vec![merges_coin[0].input(0)];
 
     // unify orb and spark
     for i in 0..2 {
@@ -151,7 +153,8 @@ pub fn spark_factory() -> Blueprint {
             bp.connect(life, uf_spark.input(2));
             (uf_spark.input(0), uf_spark.output(0))
         };
-        bp.connect(split_pure.output(i as usize), pure);
+        inputs.push(pure);
+        // bp.connect(split_pure.output(i as usize), pure);
         bp.connect(spark, merge_spark.input(i as usize));
     }
 
@@ -161,7 +164,7 @@ pub fn spark_factory() -> Blueprint {
             w: 62,
             h: dhs.height() + SubdimensionalMarket.height() * 2,
         },
-        inputs: vec![merges_coin[0].input(0), split_pure.input(0)],
+        inputs,
         outputs: vec![merges_coin[2].output(0), merge_spark.output(0)],
     }
 }

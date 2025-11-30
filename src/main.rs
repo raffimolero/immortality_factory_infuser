@@ -23,7 +23,7 @@ use crate::{prelude::*, util::export};
 fn pure_stuff() -> World {
     let mut world = World::new();
     let pf_bp = &pure_factory();
-    let stack_count = 3;
+    let stack_count = 1;
 
     let ov_bp = &overflow(3);
     let ovs = stack_vec(stack_count * 2 + 2, |i| {
@@ -70,9 +70,34 @@ fn spark_stuff() -> World {
     world
 }
 
+fn spark_stuff_2() -> World {
+    let mut world = World::new();
+    let pf = world.place(&pure_factory(), 0, 0);
+    let sf = world.place(&spark_factory(), 0, pf.height());
+    let sv_gold = world.place(&storage_vault(8, 2, Empty), 38, 36);
+    let sv_spark = world.place(
+        &storage_vault(8, 2, Empty),
+        38,
+        36 + StorageVault.height() * 2,
+    );
+    let sv_blood = world.place(
+        &storage_vault(8, 2, Empty),
+        38,
+        36 + StorageVault.height() * 4,
+    );
+    world.connect(pf.output(0), sf.input(0));
+    world.connect(pf.output(2), sf.input(1));
+    world.connect(pf.output(3), sf.input(2));
+    world.connect(sf.output(0), sv_gold.input(0));
+    world.connect(sf.output(1), sv_spark.input(0));
+    world.connect(pf.output(1), sv_blood.input(0));
+    world
+}
+
 fn stuff() -> World {
     // spark_stuff()
-    pure_stuff()
+    // pure_stuff()
+    spark_stuff_2()
 }
 
 fn main() {
