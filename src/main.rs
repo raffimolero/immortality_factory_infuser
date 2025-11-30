@@ -1,70 +1,13 @@
+mod storage;
+
 use immortality_factory_laboratory::prelude::*;
 
+use crate::storage::*;
 use std::{
     array,
     fs::File,
     io::{BufWriter, Write},
 };
-
-fn all_items() -> World {
-    let mut row = World::new();
-    let mut vaults = vec![];
-    for (i, item) in Item::ITEMS.iter().copied().enumerate() {
-        vaults.push(row.place(
-            StructureData::StorageVault {
-                input: item,
-                storage: [item; 16],
-                output: item,
-            },
-            (i * 5) as i32,
-            0,
-        ));
-    }
-    let mut grid = World::new();
-    let mut prev = None;
-    for i in 0..16 {
-        let cur = grid.place(&row, 0, i * 2);
-        if let Some(prev) = &prev {
-            for v in vaults.iter() {
-                grid.connect(v.inside(prev).output(0), v.inside(&cur).input(0));
-            }
-        }
-        prev = Some(cur);
-    }
-    grid
-}
-
-fn storage_vault(count: usize, rows: usize, item: Item) -> Blueprint {
-    let mut bp = World::new();
-    let mut input = None;
-    let mut output = None;
-    for i in 0..count {
-        let cur = bp.place(
-            StructureData::StorageVault {
-                input: item,
-                storage: [item; 16],
-                output: item,
-            },
-            (i / rows) as i32 * StorageVault.width(),
-            (i % rows) as i32 * StorageVault.height(),
-        );
-        if let Some(prev) = output.take() {
-            bp.connect(prev, cur.input(0));
-        } else {
-            input = Some(cur.input(0));
-        }
-        output = Some(cur.output(0));
-    }
-    Blueprint {
-        contents: bp,
-        size: Size {
-            w: StorageVault.width(),
-            h: StorageVault.height() * count as i32,
-        },
-        inputs: Vec::from_iter(input),
-        outputs: Vec::from_iter(output),
-    }
-}
 
 /// inputs: [copper] * 4
 ///
@@ -532,7 +475,7 @@ fn stuff() -> World {
 fn main() {
     let mut world = World::new();
     world.place(Laboratory, 0, -2);
-    world.place(&all_items(), -100, -100);
+    world.place(&all_items(16), -100, -100);
     world.place(&stuff(), 0, 0);
 
     let file = File::create("../save.ini").expect("Failed to create file.");
