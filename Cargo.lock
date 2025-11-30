@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "factory"
+name = "immortality_factory_infuser"
 version = "0.1.0"
 dependencies = [
  "immortality_factory_laboratory",
