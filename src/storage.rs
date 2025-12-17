@@ -43,8 +43,8 @@ pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
     Blueprint {
         contents: bp,
         size: Size {
-            w: StorageVault.width(),
-            h: StorageVault.height() * count as Coord,
+            w: StorageVault.width() * count as i16 / rows,
+            h: StorageVault.height() * rows,
         },
         inputs,
         outputs,
