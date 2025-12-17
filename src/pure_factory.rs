@@ -7,7 +7,7 @@ pub fn pure_factory() -> Blueprint {
     let mut bp = World::new();
     let mut inputs = vec![];
     let mut outputs = vec![];
-    const ROWS: i32 = 5;
+    const ROWS: Coord = 5;
 
     // pre-calculate structure widths
     let refine_w = AirPump.width() + Refinery.width();
@@ -67,12 +67,12 @@ pub fn pure_factory() -> Blueprint {
     });
     let merge_gold = bp.place(
         Merger,
-        refines_w + MERGES as i32,
+        refines_w + MERGES as Coord,
         BigMerger.height(), //
     );
     let merge_blood = bp.place(
         Merger,
-        refines_w + MERGES as i32,
+        refines_w + MERGES as Coord,
         BigMerger.height() + Merger.height(),
     );
     bp.connect(bm_gold.output(0), merge_gold.input(1));
@@ -127,4 +127,29 @@ pub fn pure_factory() -> Blueprint {
         inputs,
         outputs,
     }
+}
+
+pub fn pure_demo() -> World {
+    let mut world = World::new();
+    let pf_bp = &pure_factory();
+    let stack_count = 3;
+
+    let ov_bp = &trash(3);
+    let ovs = stack_vec(stack_count * 2 + 2, |i| {
+        let ov = world.place(ov_bp, -ov_bp.width(), ov_bp.height() * i);
+        ov.input(0)
+    });
+
+    let pure_factories = stack_vec(stack_count, |i| {
+        let pf = world.place(pf_bp, 0, i * pf_bp.height());
+        world.connect(pf.output(2), ovs[i as usize * 2]);
+        world.connect(pf.output(3), ovs[i as usize * 2 + 1]);
+        pf
+    });
+    let (inputs, outputs) = chain_ports(&mut world, &pure_factories, [(0, 0), (1, 1)]).unwrap();
+    for (i, o) in outputs.into_iter().enumerate() {
+        world.connect(o, ovs[i + stack_count * 2]);
+    }
+
+    world
 }

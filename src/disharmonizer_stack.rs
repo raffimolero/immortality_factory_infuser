@@ -12,7 +12,7 @@ pub fn disharmonizer_stack() -> Blueprint {
         let mut outputs = Vec::with_capacity(16);
         let Size { w, h } = Disharmonizer.size();
         for (i, (dx, dy)) in [(0, 0), (w, 0), (0, h), (w, h)].into_iter().enumerate() {
-            let i = i as i32;
+            let i = i as Coord;
             let merge_x = 24 + i;
             let merge = bp.place(BigMerger, merge_x, merge_y);
 

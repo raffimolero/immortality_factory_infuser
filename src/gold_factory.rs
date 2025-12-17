@@ -158,3 +158,11 @@ pub fn gold_factory() -> Blueprint {
         outputs: vec![merges_coin[5].output(0)],
     }
 }
+
+pub fn gold_demo() -> World {
+    let mut world = World::new();
+    let sf = world.place(&gold_factory(), 0, 0);
+    let sv = world.place(&storage(8 * 4, 4, Empty), 0, sf.height());
+    world.connect(sf.output(0), sv.input(0));
+    world
+}

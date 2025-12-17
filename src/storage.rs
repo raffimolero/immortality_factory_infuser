@@ -16,7 +16,7 @@ pub fn trash(columns: usize) -> Blueprint {
     Blueprint {
         contents: bp,
         size: Size {
-            w: col_w * columns as i32,
+            w: col_w * columns as Coord,
             h: BigSplitter.height(),
         },
         inputs,
@@ -25,7 +25,7 @@ pub fn trash(columns: usize) -> Blueprint {
 }
 
 pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
-    let rows = rows as i32;
+    let rows = rows as Coord;
     let mut bp = World::new();
     let svs = stack_vec(count, |i| {
         let sv = bp.place(
@@ -44,7 +44,7 @@ pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
         contents: bp,
         size: Size {
             w: StorageVault.width(),
-            h: StorageVault.height() * count as i32,
+            h: StorageVault.height() * count as Coord,
         },
         inputs,
         outputs,
@@ -56,7 +56,7 @@ pub fn all_items(rows: usize) -> Blueprint {
     let mut inputs = vec![];
     let mut outputs = vec![];
     for (i, item) in Item::ITEMS.iter().copied().enumerate() {
-        let i = i as i32;
+        let i = i as Coord;
         let sv = bp.place(&storage(rows, rows, item), i * StorageVault.width(), 0);
         inputs.push(sv.input(0));
         outputs.push(sv.output(0));
@@ -65,8 +65,8 @@ pub fn all_items(rows: usize) -> Blueprint {
         contents: bp,
         size: StorageVault.size()
             * Size {
-                w: Item::ITEMS.len() as i32,
-                h: rows as i32,
+                w: Item::ITEMS.len() as Coord,
+                h: rows as Coord,
             },
         inputs,
         outputs,

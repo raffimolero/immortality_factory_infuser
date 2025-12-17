@@ -1,7 +1,5 @@
-use crate::disharmonizer_stack::disharmonizer_stack;
+use crate::prelude::*;
 use std::array;
-
-use immortality_factory_laboratory::prelude::*;
 
 /// inputs: [gold, pure, pure]
 ///
@@ -13,7 +11,7 @@ pub fn spark_factory() -> Blueprint {
 
     // a lot of things
     let glooms: [PortOut; 4] = array::from_fn(|i| {
-        let i = i as i32;
+        let i = i as Coord;
         let merge_x = (i % 2) * (Merger.width() * 3) + 40;
         let merge_y = (i / 2) * Merger.height() + 5;
         let merge0 = bp.place(Merger, merge_x, merge_y);
@@ -47,7 +45,7 @@ pub fn spark_factory() -> Blueprint {
     });
 
     let merges_coin: [Structure; 5] = array::from_fn(|i| {
-        let merge_x = 56 + i as i32;
+        let merge_x = 56 + i as Coord;
         let merge_y = 5;
         bp.place(BigMerger, merge_x, merge_y)
     });
@@ -59,7 +57,7 @@ pub fn spark_factory() -> Blueprint {
 
     // sell dust
     let sells: [Structure; 16] = array::from_fn(|i| {
-        let i = i as i32;
+        let i = i as Coord;
         let sell_x = (i / 2) * SubdimensionalMarket.width();
         let sell_y = (i % 2) * SubdimensionalMarket.height() + dhs.height();
         let sell = bp.place(SubdimensionalMarket, sell_x, sell_y);
@@ -125,7 +123,7 @@ pub fn spark_factory() -> Blueprint {
 
         // create life force
         let life = {
-            let i = i as i32;
+            let i = i as Coord;
             let uf_x = (i / 2 + 8) * SubdimensionalMarket.width();
             let uf_y = (i % 2) * Unifier.height() + dhs.height();
             let uf_life = bp.place(
@@ -167,4 +165,44 @@ pub fn spark_factory() -> Blueprint {
         inputs,
         outputs: vec![merges_coin[2].output(0), merge_spark.output(0)],
     }
+}
+
+pub fn spark_demo() -> World {
+    let mut world = World::new();
+    let pure_vault_count = 8;
+    let sv_bp = &storage(pure_vault_count, pure_vault_count, PureManaGem);
+    let sf = world.place(&spark_factory(), 0, 0);
+    let _ = stack::<_, 2>(|i| {
+        let sv = world.place(sv_bp, -sv_bp.width(), i * sv_bp.height());
+        world.connect(sv.output(0), sf.input(i as usize + 1));
+    });
+    {
+        let sv_gold = world.place(&storage(8 * 4, 4, Empty), 0, sf.height());
+        world.connect(sf.output(0), sv_gold.input(0));
+    }
+    {
+        let sv_spark = world.place(
+            &storage(8 * 4, 4, Empty),
+            0,
+            sf.height() + StorageVault.height() * 4,
+        );
+        world.connect(sf.output(1), sv_spark.input(0));
+    }
+    world
+}
+
+pub fn pure_spark_demo() -> World {
+    let mut world = World::new();
+    let pf = world.place(&pure_factory(), 0, 0);
+    let sf = world.place(&spark_factory(), 0, pf.height());
+    let sv_gold = world.place(&storage(8, 2, Empty), 38, 36);
+    let sv_spark = world.place(&storage(8, 2, Empty), 38, 36 + StorageVault.height() * 2);
+    let sv_blood = world.place(&storage(8, 2, Empty), 38, 36 + StorageVault.height() * 4);
+    world.connect(pf.output(0), sf.input(0));
+    world.connect(pf.output(2), sf.input(1));
+    world.connect(pf.output(3), sf.input(2));
+    world.connect(sf.output(0), sv_gold.input(0));
+    world.connect(sf.output(1), sv_spark.input(0));
+    world.connect(pf.output(1), sv_blood.input(0));
+    world
 }

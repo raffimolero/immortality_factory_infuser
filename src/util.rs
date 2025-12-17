@@ -10,13 +10,13 @@ use std::{
 };
 
 /// convenience function to make array::from_fn() cleaner to call
-pub fn stack<T, const N: usize>(mut f: impl FnMut(i32) -> T) -> [T; N] {
-    array::from_fn(|i| f(i as i32))
+pub fn stack<T, const N: usize>(mut f: impl FnMut(Coord) -> T) -> [T; N] {
+    array::from_fn(|i| f(i as Coord))
 }
 
 /// convenience function to make Vec::from_iter() cleaner to call
-pub fn stack_vec<T>(n: usize, f: impl FnMut(i32) -> T) -> Vec<T> {
-    Vec::from_iter((0..n as i32).map(f))
+pub fn stack_vec<T>(n: usize, f: impl FnMut(Coord) -> T) -> Vec<T> {
+    Vec::from_iter((0..n as Coord).map(f))
 }
 
 /// chains the outputs of each machine to the inputs of the next machine in an iterator,
