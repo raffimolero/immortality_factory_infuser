@@ -191,26 +191,20 @@ pub fn chassis_factory() -> Blueprint {
 
 pub fn chassis_demo() -> World {
     let mut world = World::new();
-    let pure_vault_count = 3;
+    let pure_vault_count = 6;
     let cf = world.place(&chassis_factory(), 0, 0);
 
     let sv_g_bp = &storage(8 * 4, 4, GoldCoin);
     let sv_gold = world.place(sv_g_bp, -sv_g_bp.width(), 0);
+    // the overflowing gold simply loops
     world.connect(sv_gold.output(0), cf.input(0));
+    world.connect(cf.output(0), sv_gold.input(0));
 
     let sv_bp = &storage(pure_vault_count, 1, PureManaGem);
     let _ = stack::<_, 5>(|i| {
         let sv = world.place(sv_bp, -sv_bp.width(), sv_g_bp.height() + i * sv_bp.height());
         world.connect(sv.output(0), cf.input(i as usize + 1));
     });
-    {
-        let sv_gold = world.place(
-            &storage(8 * 4, 4, Empty),
-            0,
-            cf.height() + StorageVault.height() * 4,
-        );
-        world.connect(cf.output(0), sv_gold.input(0));
-    }
     let ads = stack::<_, 3>(|i| {
         let ad_salt = world.place(
             AbysalDoor,

@@ -49,7 +49,7 @@ fn get_pump_count(world: &World) -> usize {
 fn main() {
     let mut world = World::new();
     world.place(Laboratory, 0, -2);
-    world.place(&all_items(16), -100, -100);
+    // world.place(&all_items(16), -100, -100);
     world.place(&stuff(), 0, 0);
 
     println!("{} Air Pumps.", get_pump_count(&world));
