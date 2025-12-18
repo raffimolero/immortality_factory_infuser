@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-immortality_factory_laboratory = { path = "../immortal" }
+immortality_factory_laboratory = { path = "../immortality_factory_laboratory" }

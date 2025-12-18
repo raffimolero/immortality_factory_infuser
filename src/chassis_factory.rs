@@ -194,11 +194,11 @@ pub fn chassis_demo() -> World {
     let pure_vault_count = 6;
     let cf = world.place(&chassis_factory(), 0, 0);
 
-    let sv_g_bp = &storage(8 * 4, 4, GoldCoin);
+    let sv_g_bp = &storage(7 * 4, 4, GoldCoin);
     let sv_gold = world.place(sv_g_bp, -sv_g_bp.width(), 0);
     // the overflowing gold simply loops
     world.connect(sv_gold.output(0), cf.input(0));
-    world.connect(cf.output(0), sv_gold.input(0));
+    // world.connect(cf.output(0), sv_gold.input(0));
 
     let sv_bp = &storage(pure_vault_count, 1, PureManaGem);
     let _ = stack::<_, 5>(|i| {
