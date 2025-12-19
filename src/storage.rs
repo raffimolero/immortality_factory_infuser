@@ -64,11 +64,8 @@ pub fn overflow_buffer(trash_columns: usize, primary_bp: &Blueprint) -> Blueprin
     Blueprint {
         contents: bp,
         size: Size {
-            w: BigSplitter.width() + primary_bp.width() + overflow_bp.width(),
-            h: BigSplitter
-                .height()
-                .max(overflow_bp.height())
-                .max(primary_bp.height()),
+            w: overflow_bp.width() + primary_bp.width(),
+            h: overflow_bp.height().max(primary_bp.height()),
         },
         inputs: vec![overflow.input(0)],
         // outputs are instead accessed through primary and overflow

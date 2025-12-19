@@ -104,17 +104,15 @@ pub fn chassis_factory() -> Blueprint {
     // gold distribution
     let bs_gold = bp.place(BigSplitter, bss_x + 0, bss_y);
     let bs_silver = bp.place(BigSplitter, bss_x + 1, bss_y);
-    let bs_copper = bp.place(BigSplitter, bss_x + 2, bss_y);
 
     // bar/sheet distribution
+    let bm_sheet = bp.place(BigMerger, bss_x + 2, bss_y);
     let sm_gold = bp.place(SubdimensionalMarket, sm_gold_x, sm_gold_y);
-    let bm_sheet = bp.place(BigMerger, bss_x + 3, bss_y);
     let rf_sheet = bp.place(Refinery, rf_sheet_x, rf_sheet_y);
 
     bp.connect(out_bms_gold, sm_gold.input(0));
     bp.connect(sm_gold.output(0), bs_gold.input(0));
     bp.connect(sm_gold.output(1), bs_silver.input(0));
-    bp.connect(sm_gold.output(2), bs_copper.input(0));
     bp.connect(bm_sheet.output(0), rf_sheet.input(0));
 
     outputs.push(rf_sheet.output(0));
@@ -144,7 +142,7 @@ pub fn chassis_factory() -> Blueprint {
         bp.connect(out_salt, sells[salt_i + i].input(0));
 
         // adamantine bar
-        bp.connect(bs_copper.output(i), uf_bar.input(0));
+        bp.connect(sells[salt_i + i].output(2), uf_bar.input(0));
         bp.connect(bs_silver.output(i), uf_bar.input(1));
         bp.connect(bs_gold.output(i), uf_bar.input(2));
         let out_bar = uf_bar.output(0);
@@ -155,7 +153,7 @@ pub fn chassis_factory() -> Blueprint {
         bp.connect(mg_curse.output(0), dh_curse.input(0));
         bp.connect(dh_curse.output(1), uf_blood.input(0));
         bp.connect(dh_curse.output(2), uf_blood.input(1));
-        bp.connect(sells[salt_i + i].output(2), uf_blood.input(2));
+        bp.connect(sells[i].output(2), uf_blood.input(2));
         bp.connect(uf_blood.output(0), sm_blood.input(0));
         let out_silver = sm_blood.output(1);
 
