@@ -30,13 +30,13 @@ pub fn gold_factory() -> Blueprint {
             i * 4,
         );
         bp.connect(dhs_silica_out0, merge0.input(0));
-        bp.connect(dhs_silica_out1, merge1.input(0));
+        bp.connect(dhs_silica_out1, merge0.input(1));
         bp.connect(merge0.output(0), ref0.input(0));
         bp.connect(merge1.output(0), ref1.input(0));
         bp.connect(ref0.output(0), merge2.input(0));
         bp.connect(ref1.output(0), merge2.input(1));
         bp.connect(merge2.output(0), dh_gloom.input(0));
-        bp.connect(dh_gloom.output(1), merge0.input(1));
+        bp.connect(dh_gloom.output(1), merge1.input(0));
         bp.connect(dh_gloom.output(2), merge1.input(1));
         dh_gloom.output(0)
     });

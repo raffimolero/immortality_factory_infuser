@@ -6,7 +6,7 @@ mod prelude {
         gold_factory::gold_factory,
         pure_factory::pure_factory,
         spark_factory::spark_factory,
-        storage::{all_items, storage, trash},
+        storage::{all_items, overflow_buffer, storage, trash},
         util::{chain_ports, split_inputs_outputs, stack, stack_vec},
     };
 
@@ -29,8 +29,8 @@ fn stuff() -> World {
     // spark_factory::spark_demo()
     // pure_factory::pure_demo()
     // spark_factory::pure_spark_demo()
-    chassis_factory::chassis_demo()
-    // chassis_factory::pure_chassis_demo()
+    // chassis_factory::chassis_demo()
+    chassis_factory::pure_chassis_demo()
     // stress_test::ideal()
     // stress_test::buildings()
     // stress_test::pumps()
@@ -49,7 +49,7 @@ fn get_pump_count(world: &World) -> usize {
 fn main() {
     let mut world = World::new();
     world.place(Laboratory, 0, -2);
-    // world.place(&all_items(16), -100, -100);
+    // world.place(&all_items(4), -100, -100);
     world.place(&stuff(), 0, 0);
 
     println!("{} Air Pumps.", get_pump_count(&world));

@@ -1,14 +1,15 @@
 use crate::prelude::*;
 
-/// input: [gold] + [pure] * 5
+const GOLD_IN_COUNT: usize = 4;
+/// input: [gold] * 4 + [pure] * 5
 ///
-/// output: [gold, chassis] + [salt] * 3
+/// output: [chassis]
 pub fn chassis_factory() -> Blueprint {
     let mut bp = World::new();
     let mut inputs = vec![];
     let mut outputs = vec![];
     const ROWS: Coord = 5;
-    const MARKETS: Coord = 14 * 2;
+    const MARKETS: Coord = 30;
 
     // pre-calculate structure widths
     let refine_w = AirPump.width() + Refinery.width();
@@ -19,31 +20,29 @@ pub fn chassis_factory() -> Blueprint {
     let rfs_silica_x = dhs_curse_x + Disharmonizer.width();
     let dhs_plate_x = rfs_silica_x + Refinery.width();
     let ufs_x = dhs_plate_x + Disharmonizer.width();
-    let factory_x = ufs_x + Unifier.width() * ROWS;
+    let sm_gold_x = ufs_x + Unifier.width() * ROWS;
 
-    let bss_x = SubdimensionalMarket.width() * MARKETS / 2 + ROWS;
+    let rf_sheet_x = SubdimensionalMarket.width() * ((MARKETS + 1) / 2) + ROWS;
+    let bms_x = rf_sheet_x;
+    let bss_x = bms_x + BigMerger.width() * 2;
+    let factory_x = rf_sheet_x + Refinery.width();
 
     let refine_h = AirPump.height();
     let refines_h = ROWS * 2 * refine_h;
     let sells_y = refines_h;
-    let rf_sheet_y = sells_y + BigSplitter.height();
     let factory_y = sells_y + SubdimensionalMarket.height() * 2;
 
     let merges_y = BigMerger.height() * 2;
     let big_merges_y = merges_y + Merger.height() * 4;
 
+    let sm_gold_y = sells_y - SubdimensionalMarket.height();
+
+    let bss_y = sells_y;
+    let rf_sheet_y = bss_y + BigSplitter.height();
+
     let dust_i = 0;
     let salt_i = ROWS as usize * 4; // 20
-    let blood_i = salt_i + 2;
-    let gold_i = blood_i + 5;
-    // let refs_plate_w = dhs_curse_w + Refinery.width();
-    // let dhs_plate_w = refs_plate_w + Disharmonizer.width();
-    // let ufs_w = dhs_plate_w + Unifier.width() * 5;
-    // let ufs_gem_h = Unifier.height() * 2;
-    // let ufs_blood_h = ufs_gem_h + Unifier.height();
-    // let merges_curse_h = ufs_blood_h - Merger.height();
-    // let factory_w = ufs_w + Refinery.width();
-    // let factory_h = refines_h;
+    let blood_i = salt_i + 5;
 
     let sells = stack::<_, { MARKETS as usize }>(|i| {
         let y = refines_h + i % 2 * SubdimensionalMarket.height();
@@ -62,12 +61,19 @@ pub fn chassis_factory() -> Blueprint {
         let x = refines_w + i;
         bp.place(BigMerger, x, y)
     });
-    big_merges.push(bp.place(BigMerger, bss_x + 5, sells_y));
+    big_merges.push(bp.place(BigMerger, bms_x + 0, bss_y));
+    big_merges.push(bp.place(BigMerger, bms_x + 1, bss_y));
 
     let ([in_bms_gold], [out_bms_gold]) = chain_ports(&mut bp, &big_merges, [(0, 0)]).unwrap();
-    inputs.push(in_bms_gold);
+    // in_bms_gold == big_merges[0].input(0)
+    for i in 0..GOLD_IN_COUNT {
+        inputs.push(big_merges[0].input(i));
+    }
     for i in 0..blood_i {
-        bp.connect(sells[i].output(0), big_merges[i / 4].input(1 + i % 4));
+        bp.connect(
+            sells[dust_i + i].output(0),
+            big_merges[i / 4].input(4 - i % 4),
+        );
     }
 
     // mana gems and disharms
@@ -95,22 +101,23 @@ pub fn chassis_factory() -> Blueprint {
         (dh_mana.output(2), dh_mana.output(3))
     });
 
-    let bs_gold_ov = bp.place(BigSplitter, bss_x + 0, sells_y);
-    let bs_gold = bp.place(BigSplitter, bss_x + 1, sells_y);
-    let bs_silver = bp.place(BigSplitter, bss_x + 2, sells_y);
-    let bs_copper = bp.place(BigSplitter, bss_x + 3, sells_y);
-    let bm_sheet = bp.place(BigMerger, bss_x + 4, sells_y);
-    let sm_gold = sells[gold_i];
-    let rf_sheet = bp.place(Refinery, bss_x, rf_sheet_y);
+    // gold distribution
+    let bs_gold = bp.place(BigSplitter, bss_x + 0, bss_y);
+    let bs_silver = bp.place(BigSplitter, bss_x + 1, bss_y);
+    let bs_copper = bp.place(BigSplitter, bss_x + 2, bss_y);
+
+    // bar/sheet distribution
+    let sm_gold = bp.place(SubdimensionalMarket, sm_gold_x, sm_gold_y);
+    let bm_sheet = bp.place(BigMerger, bss_x + 3, bss_y);
+    let rf_sheet = bp.place(Refinery, rf_sheet_x, rf_sheet_y);
 
     bp.connect(out_bms_gold, sm_gold.input(0));
-    bp.connect(sm_gold.output(0), bs_gold_ov.input(0));
-    bp.connect(bs_gold_ov.output(4), bs_gold.input(0));
+    bp.connect(sm_gold.output(0), bs_gold.input(0));
     bp.connect(sm_gold.output(1), bs_silver.input(0));
     bp.connect(sm_gold.output(2), bs_copper.input(0));
     bp.connect(bm_sheet.output(0), rf_sheet.input(0));
 
-    outputs.push(bs_gold_ov.output(0));
+    outputs.push(rf_sheet.output(0));
     outputs.push(rf_sheet.output(0));
 
     let in_curse_silica = stack::<_, { ROWS as usize }>(|i| {
@@ -134,11 +141,7 @@ pub fn chassis_factory() -> Blueprint {
         let sm_blood = sells[blood_i + i];
 
         let out_salt = dh_curse.output(0);
-        if i < 2 {
-            bp.connect(out_salt, sells[salt_i + i].input(0));
-        } else {
-            outputs.push(out_salt);
-        }
+        bp.connect(out_salt, sells[salt_i + i].input(0));
 
         // adamantine bar
         bp.connect(bs_copper.output(i), uf_bar.input(0));
@@ -152,14 +155,14 @@ pub fn chassis_factory() -> Blueprint {
         bp.connect(mg_curse.output(0), dh_curse.input(0));
         bp.connect(dh_curse.output(1), uf_blood.input(0));
         bp.connect(dh_curse.output(2), uf_blood.input(1));
-        bp.connect(sells[i].output(2), uf_blood.input(2));
+        bp.connect(sells[salt_i + i].output(2), uf_blood.input(2));
         bp.connect(uf_blood.output(0), sm_blood.input(0));
         let out_silver = sm_blood.output(1);
 
         // gloom shard
         bp.connect(out_curse_silica[i * 2 + 0].1, mg_silica_0.input(0));
-        bp.connect(out_curse_silica[i * 2 + 1].1, mg_silica_1.input(0));
-        bp.connect(dh_plate.output(1), mg_silica_0.input(1));
+        bp.connect(out_curse_silica[i * 2 + 1].1, mg_silica_0.input(1));
+        bp.connect(dh_plate.output(1), mg_silica_1.input(0));
         bp.connect(dh_plate.output(2), mg_silica_1.input(1));
         bp.connect(mg_silica_0.output(0), rf_silica_0.input(0));
         bp.connect(mg_silica_1.output(0), rf_silica_1.input(0));
@@ -194,24 +197,16 @@ pub fn chassis_demo() -> World {
     let pure_vault_count = 6;
     let cf = world.place(&chassis_factory(), 0, 0);
 
-    let sv_g_bp = &storage(7 * 4, 4, GoldCoin);
+    let sv_g_bp = &storage(6 * 4, 4, GoldCoin);
     let sv_gold = world.place(sv_g_bp, -sv_g_bp.width(), 0);
-    // the overflowing gold simply loops
     world.connect(sv_gold.output(0), cf.input(0));
+    // // the overflowing gold simply loops
     // world.connect(cf.output(0), sv_gold.input(0));
 
     let sv_bp = &storage(pure_vault_count, 1, PureManaGem);
     let _ = stack::<_, 5>(|i| {
         let sv = world.place(sv_bp, -sv_bp.width(), sv_g_bp.height() + i * sv_bp.height());
-        world.connect(sv.output(0), cf.input(i as usize + 1));
-    });
-    let ads = stack::<_, 3>(|i| {
-        let ad_salt = world.place(
-            AbysalDoor,
-            Laboratory.width() + AbysalDoor.width() * i,
-            -AbysalDoor.height(),
-        );
-        world.connect(cf.output(2 + i as usize), ad_salt.input(0));
+        world.connect(sv.output(0), cf.input(GOLD_IN_COUNT + i as usize));
     });
     let infuser = world.place(
         RitualInfuser,
@@ -224,8 +219,48 @@ pub fn chassis_demo() -> World {
 
 pub fn pure_chassis_demo() -> World {
     let mut world = World::new();
+    let mut y = 0;
+    let mut inc = |dy: Coord| -> Coord {
+        let tmp = y;
+        y += dy;
+        tmp
+    };
+    let mut place = |world: &mut World, bp: &Blueprint| world.place(bp, 0, inc(bp.height()));
     let pf = &pure_factory();
-    let pfs = stack::<_, 16>(|i| world.place(pf, 0, i * pf.height()));
-    let (inputs, outputs) = chain_ports(&mut world, &pfs, [(0, 0), (1, 1)]).unwrap();
+    let pfs = stack::<_, 3>(|i| place(&mut world, pf));
+    let (_, [pf_out_gold, pf_out_blood]) = chain_ports(&mut world, &pfs, [(0, 0), (1, 1)]).unwrap();
+
+    let gf = &gold_factory();
+    let gfs = stack::<_, 1>(|i| place(&mut world, gf));
+    let ([gf_in_gold], [gf_out_gold]) = chain_ports(&mut world, &gfs, [(0, 0)]).unwrap();
+    world.connect(pf_out_gold, gf_in_gold);
+
+    let cf_bp = &chassis_factory();
+    let cf = place(&mut world, cf_bp);
+
+    let ov_g = place(&mut world, &overflow_buffer(1, &storage(2 * 2, 2, Empty)));
+    world.connect(gf_out_gold, ov_g.input(0));
+    world.connect(ov_g.output(0), cf.input(0));
+
+    // connect 5/6 pure gems
+    world.connect(pfs[0].output(2), cf.input(GOLD_IN_COUNT + 0));
+    world.connect(pfs[0].output(3), cf.input(GOLD_IN_COUNT + 1));
+    world.connect(pfs[1].output(2), cf.input(GOLD_IN_COUNT + 2));
+    world.connect(pfs[1].output(3), cf.input(GOLD_IN_COUNT + 3));
+    world.connect(pfs[2].output(2), cf.input(GOLD_IN_COUNT + 4));
+    // do nothing with the 6th pure gem output
+
+    let sv_c = place(&mut world, &storage(4 * 1, 1, Empty));
+    world.connect(cf.output(1), sv_c.input(0));
+    let trash = &trash(2);
+    // let trash_s0 = place(&mut world, trash);
+    // world.connect(cf.output(2), trash_s0.input(0));
+    // let trash_s1 = place(&mut world, trash);
+    // world.connect(cf.output(3), trash_s1.input(0));
+    // let trash_s2 = place(&mut world, trash);
+    // world.connect(cf.output(4), trash_s2.input(0));
+    let trash_blood = place(&mut world, trash);
+    world.connect(pf_out_blood, trash_blood.input(0));
+
     world
 }

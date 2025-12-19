@@ -51,6 +51,31 @@ pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
     }
 }
 
+/// literally only pipes the input into the first input of primary
+/// and only gives you the first output of primary
+///
+/// if you want customizability, go place them manually
+pub fn overflow_buffer(trash_columns: usize, primary_bp: &Blueprint) -> Blueprint {
+    let mut bp = World::new();
+    let overflow_bp = &trash(trash_columns);
+    let overflow = bp.place(overflow_bp, 0, 0);
+    let primary = bp.place(primary_bp, overflow.width(), 0);
+    bp.connect(overflow.output(0), primary.input(0));
+    Blueprint {
+        contents: bp,
+        size: Size {
+            w: BigSplitter.width() + primary_bp.width() + overflow_bp.width(),
+            h: BigSplitter
+                .height()
+                .max(overflow_bp.height())
+                .max(primary_bp.height()),
+        },
+        inputs: vec![overflow.input(0)],
+        // outputs are instead accessed through primary and overflow
+        outputs: vec![primary.output(0)],
+    }
+}
+
 pub fn all_items(rows: usize) -> Blueprint {
     let mut bp = World::new();
     let mut inputs = vec![];
