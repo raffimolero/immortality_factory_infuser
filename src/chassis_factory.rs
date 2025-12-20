@@ -9,7 +9,8 @@ pub fn chassis_factory() -> Blueprint {
     let mut inputs = vec![];
     let mut outputs = vec![];
     const ROWS: Coord = 5;
-    const MARKETS: Coord = 30;
+    const DUSTS: usize = ROWS as usize * 4; // 20
+    const MARKETS: usize = 30;
 
     // pre-calculate structure widths
     let refine_w = AirPump.width() + Refinery.width();
@@ -22,7 +23,7 @@ pub fn chassis_factory() -> Blueprint {
     let ufs_x = dhs_plate_x + Disharmonizer.width();
     let sm_gold_x = ufs_x + Unifier.width() * ROWS;
 
-    let rf_sheet_x = SubdimensionalMarket.width() * ((MARKETS + 1) / 2) + ROWS;
+    let rf_sheet_x = SubdimensionalMarket.width() * ((MARKETS as Coord + 1) / 2) + ROWS;
     let bms_x = rf_sheet_x;
     let bss_x = bms_x + BigMerger.width() * 2;
     let factory_x = rf_sheet_x + Refinery.width();
@@ -40,13 +41,9 @@ pub fn chassis_factory() -> Blueprint {
     let bss_y = sells_y;
     let rf_sheet_y = bss_y + BigSplitter.height();
 
-    let dust_i = 0;
-    let salt_i = ROWS as usize * 4; // 20
-    let blood_i = salt_i + 5;
-
-    let sells = stack::<_, { MARKETS as usize }>(|i| {
+    let sells = stack::<_, MARKETS>(|i| {
+        let x = i / 2 * SubdimensionalMarket.width() + (i >= 12) as Coord * ROWS;
         let y = refines_h + i % 2 * SubdimensionalMarket.height();
-        let x = i / 2 * SubdimensionalMarket.width() + (i >= 12) as i16 * ROWS;
         bp.place(SubdimensionalMarket, x, y)
     });
 
@@ -69,11 +66,13 @@ pub fn chassis_factory() -> Blueprint {
     for i in 0..GOLD_IN_COUNT {
         inputs.push(big_merges[0].input(i));
     }
-    for i in 0..blood_i {
-        bp.connect(
-            sells[dust_i + i].output(0),
-            big_merges[i / 4].input(4 - i % 4),
-        );
+    for i in 0..DUSTS + ROWS as usize {
+        let sell_i = if i < DUSTS {
+            i
+        } else {
+            (i - DUSTS) * 2 + DUSTS
+        };
+        bp.connect(sells[sell_i].output(0), big_merges[i / 4].input(4 - i % 4));
     }
 
     // mana gems and disharms
@@ -135,13 +134,15 @@ pub fn chassis_factory() -> Blueprint {
         let mg_silica_0 = merges[ROWS as usize * 1 + i];
         let mg_silica_1 = merges[ROWS as usize * 2 + i];
         let mg_plate = merges[ROWS as usize * 3 + i];
-        let sm_blood = sells[blood_i + i];
+        let sm_dust = sells[i * 2];
+        let sm_salt = sells[DUSTS + i * 2];
+        let sm_blood = sells[DUSTS + i * 2 + 1];
 
         let out_salt = dh_curse.output(0);
-        bp.connect(out_salt, sells[salt_i + i].input(0));
+        bp.connect(out_salt, sm_salt.input(0));
 
         // adamantine bar
-        bp.connect(sells[salt_i + i].output(2), uf_bar.input(0));
+        bp.connect(sm_salt.output(2), uf_bar.input(0));
         bp.connect(bs_silver.output(i), uf_bar.input(1));
         bp.connect(bs_gold.output(i), uf_bar.input(2));
         let out_bar = uf_bar.output(0);
@@ -152,7 +153,7 @@ pub fn chassis_factory() -> Blueprint {
         bp.connect(mg_curse.output(0), dh_curse.input(0));
         bp.connect(dh_curse.output(1), uf_blood.input(0));
         bp.connect(dh_curse.output(2), uf_blood.input(1));
-        bp.connect(sells[i].output(2), uf_blood.input(2));
+        bp.connect(sm_dust.output(2), uf_blood.input(2));
         bp.connect(uf_blood.output(0), sm_blood.input(0));
         let out_silver = sm_blood.output(1);
 
