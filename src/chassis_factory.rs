@@ -116,7 +116,6 @@ pub fn chassis_factory() -> Blueprint {
     bp.connect(bm_sheet.output(0), rf_sheet.input(0));
 
     outputs.push(rf_sheet.output(0));
-    outputs.push(rf_sheet.output(0));
 
     let in_curse_silica = stack::<_, { ROWS as usize }>(|i| {
         let dh_curse = bp.place(Disharmonizer, dhs_curse_x, i * Disharmonizer.height());
@@ -236,8 +235,15 @@ pub fn pure_chassis_demo() -> World {
     let cf_bp = &chassis_factory();
     let cf = place(&mut world, cf_bp);
 
+    let sv_c = place(&mut world, &storage(4 * 1, 1, Empty));
+    world.connect(cf.output(0), sv_c.input(0));
+
+    let sell_blood = place(&mut world, &sell(5));
     let ov_g = place(&mut world, &overflow_buffer(1, &storage(2 * 2, 2, Empty)));
-    world.connect(gf_out_gold, ov_g.input(0));
+
+    world.connect(gf_out_gold, sell_blood.input(0));
+    world.connect(pf_out_blood, sell_blood.input(1));
+    world.connect(sell_blood.output(0), ov_g.input(0));
     world.connect(ov_g.output(0), cf.input(0));
 
     // connect 5/6 pure gems
@@ -248,17 +254,12 @@ pub fn pure_chassis_demo() -> World {
     world.connect(pfs[2].output(2), cf.input(GOLD_IN_COUNT + 4));
     // do nothing with the 6th pure gem output
 
-    let sv_c = place(&mut world, &storage(4 * 1, 1, Empty));
-    world.connect(cf.output(1), sv_c.input(0));
-    let trash = &trash(2);
     // let trash_s0 = place(&mut world, trash);
     // world.connect(cf.output(2), trash_s0.input(0));
     // let trash_s1 = place(&mut world, trash);
     // world.connect(cf.output(3), trash_s1.input(0));
     // let trash_s2 = place(&mut world, trash);
     // world.connect(cf.output(4), trash_s2.input(0));
-    let trash_blood = place(&mut world, trash);
-    world.connect(pf_out_blood, trash_blood.input(0));
 
     world
 }

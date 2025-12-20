@@ -24,6 +24,50 @@ pub fn trash(columns: usize) -> Blueprint {
     }
 }
 
+fn sell_one() -> Blueprint {
+    let mut bp = World::new();
+    let bs = bp.place(BigSplitter, 0, 0);
+    let bm = bp.place(BigMerger, 1, 0);
+    for j in 0..4 {
+        let ad = bp.place(
+            SubdimensionalMarket,
+            2 + j * SubdimensionalMarket.width(),
+            0,
+        );
+        bp.connect(bs.output(j as usize), ad.input(0));
+        bp.connect(ad.output(0), bm.input(j as usize));
+    }
+    Blueprint {
+        contents: bp,
+        size: Size {
+            w: 2 + SubdimensionalMarket.width() * 4,
+            h: BigSplitter.height(),
+        },
+        inputs: vec![bm.input(4), bs.input(0)],
+        outputs: vec![bm.output(0), bs.output(4)],
+    }
+}
+
+/// inputs: [gold, <any>]
+///
+/// outputs: [gold, <any>]
+pub fn sell(rows: usize) -> Blueprint {
+    let mut bp = World::new();
+    let row = &sell_one();
+    let sps = stack_vec(rows, |i| bp.place(row, 0, i * row.height()));
+    let (inputs, outputs) = split_inputs_outputs(chain_ports(&mut bp, &sps, [(0, 0), (1, 1)]));
+    Blueprint {
+        contents: bp,
+        size: row.size()
+            * Size {
+                w: 1,
+                h: rows as Coord,
+            },
+        inputs,
+        outputs,
+    }
+}
+
 pub fn storage(count: usize, rows: usize, item: Item) -> Blueprint {
     let rows = rows as Coord;
     let mut bp = World::new();
