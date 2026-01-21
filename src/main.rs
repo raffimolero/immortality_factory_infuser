@@ -54,16 +54,8 @@ fn main() {
 
     println!("{} Air Pumps.", get_pump_count(&world));
     println!("{} Structures.", world.structures.len());
-    println!("{} Connections.", world.connections.len());
     let structure_size = size_of_val(&world.structures[0]);
-    let connection_size = size_of_val(&world.connections[0]);
     let structure_bytes = world.structures.len() * structure_size;
-    let connection_bytes = world.connections.len() * connection_size;
-    println!(
-        "{} bytes total:\n\
-        > {structure_bytes} bytes from structures ({structure_size} bytes/struct)\n\
-        > {connection_bytes} bytes from connections ({connection_size} bytes/connect)",
-        structure_bytes + connection_bytes,
-    );
-    export(&world, "../save.ini").expect("Could not export world.");
+    println!("{structure_bytes} bytes from structures ({structure_size} bytes/struct",);
+    export(&world, "../save_v1_6.ini").expect("Could not export world.");
 }
